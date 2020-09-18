@@ -1,5 +1,5 @@
 # AES67 Sender
-Make a soundcard input available in an AES67 network
+Make a soundcard input available in an AES67 network. Works under Windows, Linux and MacOS.
 ## Installation
 To install aes67-sender, clone the repository and install the dependencies.
 ```
@@ -25,3 +25,4 @@ Options:
   -h, --help               display help for command
 ```
 
+The software has to be executed with priviliges, because the PTP client binds to ports below 1024.
