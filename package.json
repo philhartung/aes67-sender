@@ -1,0 +1,28 @@
+{
+  "name": "aes67-sender",
+  "version": "1.0.0",
+  "description": "Make a soundcard input available in a AES67 network",
+  "main": "aes67.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/philhartung/aes67-sender.git"
+  },
+  "keywords": [
+    "aes67",
+    "aoip"
+  ],
+  "author": "Philipp Hartung",
+  "license": "GPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/philhartung/aes67-sender/issues"
+  },
+  "homepage": "https://github.com/philhartung/aes67-sender#readme",
+  "dependencies": {
+    "audify": "^1.5.2",
+    "commander": "^6.1.0",
+    "ptpv2": "^1.0.1"
+  }
+}
