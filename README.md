@@ -1,5 +1,5 @@
 # AES67 Sender
-Make a soundcard input available in an AES67 network. Works under Windows, Linux and MacOS.
+Make a soundcard input available in an AES67 network. Works under Windows, Linux and MacOS. Tested under Ubuntu 20.04, Windows 10. Not tested under MacOS.
 ## Installation
 To install aes67-sender, clone the repository and install the dependencies.
 ```
