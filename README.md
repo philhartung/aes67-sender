@@ -31,9 +31,9 @@ The software has to be executed with priviliges, because the PTP client binds to
 ### Raspberry Pi 4 with Focusrite Scarlett 2i2
 The setup is a Rasperry Pi 4 running aes67-sender with a Focusrite Scarlett 2i2 USB audio interface. First list the audio devices:
 ```
-pi@raspberrypi:~/aes67-sender $ node aes67 -a alsa --device
+pi@raspberrypi:~/aes67-sender $ node aes67 -a alsa --devices
 Selected ALSA as audio api
 Index, Name, # of Channels
 1 'hw:Scarlett 2i2 USB,0' 2
 ```
-We see the Focusrite interface is index #1, so we can execute the following command to start aes67-sender: `sudo node aes67 -a alsa -d 1 -n "Focusrite Scarlett 2i2"`. The device should now show up as "Focusrite Scarlett 2i2" in Dante Controller or similar software. The two inputs of the Focusrite Scarlett 2i2 are now available in the AES67 network.
+We see the Focusrite interface is index #1, so we can execute the following command to start *aes67-sender*: `sudo node aes67 -a alsa -d 1 -n "Focusrite Scarlett 2i2"`. The device should now show up as "Focusrite Scarlett 2i2" in Dante Controller or similar software. The two inputs of the Focusrite Scarlett 2i2 are now available in the AES67 network.
