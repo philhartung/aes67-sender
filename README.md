@@ -7,7 +7,7 @@ git clone https://github.com/philhartung/aes67-sender.git
 cd aes67-sender
 npm install
 ```
-Audify (audio backend used) prebuilds are available for most major platforms and Node versions. If you need to build Audify from source, see https://github.com/almogh52/audify#installation.
+Audify (audio backend used) prebuilds are available for most major platforms and Node versions. If you need to build Audify from source, see https://github.com/almogh52/audify#requirements-for-source-build.
 ## Usage
 To display the help, execute `node aes67 --help`:
 ```
