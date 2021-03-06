@@ -1,6 +1,6 @@
 {
   "name": "aes67-sender",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Make a soundcard input available in a AES67 network",
   "main": "aes67.js",
   "scripts": {
@@ -23,6 +23,6 @@
   "dependencies": {
     "audify": "^1.5.2",
     "commander": "^6.1.0",
-    "ptpv2": "^1.0.1"
+    "ptpv2": "^1.0.6"
   }
 }
