@@ -87,6 +87,7 @@ if(program.streamname){
 let addr;
 if(program.address){
 	addr = program.address;
+	//check if IPv4????
 }else{
 	var interfaces = os.networkInterfaces();
 	var interfaceNames = Object.keys(interfaces);
@@ -132,7 +133,7 @@ if(program.channels && program.channels <= audioChannels){
 }
 
 //mcast addr
-var aes67Multicast = '239.69.1.122';
+var aes67Multicast = '239.69.'+addr.split('.').splice(2).join('.');
 if(program.mcast){
 	aes67Multicast = program.mcast;
 }
@@ -150,6 +151,11 @@ let ptpMaster;
 var seqNum = 0;
 var timestampCalc = 0;
 var ssrc = sessID % 0x100000000;
+
+//timestamp offset stuff
+var offsetSum = 0;
+var count = 0;
+var correct = true;
 
 //open audio stream
 rtAudio.openStream(null, {deviceId: audioDevice, nChannels: audioChannels, firstChannel: 0}, RtAudioFormat.RTAUDIO_SINT16, samplerate, fpp, streamName, pcm => rtpSend(pcm));
@@ -182,15 +188,13 @@ var rtpSend = function(pcm){
 	
 	var rtpBuffer = Buffer.concat([rtpHeader, l24]);
 
-	//correct timestamp
-	if(seqNum % 1000 == 0){
+	// timestamp correction stuff
+	if(correct){
+		correct = false;
+
 		var ptpTime = ptpv2.ptp_time();
 		var timestampRTP = ((ptpTime[0] * samplerate) + Math.round((ptpTime[1] * samplerate) / 1000000000)) % 0x100000000;
-		var diff = timestampRTP - timestampCalc;
-
-		if(diff < 0 || diff > fpp){
-			timestampCalc = Math.floor(timestampRTP / fpp)*fpp;
-		}
+		timestampCalc = Math.floor(timestampRTP / fpp)*fpp;
 	}
 	
 	//write timestamp
@@ -201,5 +205,25 @@ var rtpSend = function(pcm){
 
 	//increase seqnum
 	seqNum = (seqNum + 1) % 0x10000;
+
+	//timestamp average stuff
+	var ptpTime = ptpv2.ptp_time();
+	var timestampRTP = ((ptpTime[0] * samplerate) + Math.round((ptpTime[1] * samplerate) / 1000000000)) % 0x100000000;
+	var diff = Math.abs(timestampRTP - timestampCalc);
+	offsetSum += diff;
+	count++;
+
+	//increase timestamp
 	timestampCalc = (timestampCalc + fpp) % 0x100000000;
 }
+
+setInterval(function(){
+	var avg = Math.round(offsetSum / count);
+
+	if(avg > fpp){
+		correct = true;
+	}
+
+	offsetSum = 0;
+	count = 0;
+}, 100);
