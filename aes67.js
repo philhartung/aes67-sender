@@ -67,11 +67,11 @@ if(program.api){
 logger('Selected',rtAudio.getApi(),'as audio api');
 
 //list audio devices
-var audioDevices = rtAudio.getDevices();
+let audioDevices = rtAudio.getDevices();
 if(program.devices){
 	console.log('Index, Name, # of Channels');
-	for(var i = 0; i < audioDevices.length; i++){
-		var device = audioDevices[i];
+	for(let i = 0; i < audioDevices.length; i++){
+		let device = audioDevices[i];
 		
 		if(device.inputChannels > 0){
 			console.log(i, device.name, device.inputChannels);
@@ -83,7 +83,7 @@ if(program.devices){
 
 //options for AES67
 //stream name
-var streamName = os.hostname();
+let streamName = os.hostname();
 if(program.streamname){
 	streamName = program.streamname;
 }
@@ -94,13 +94,13 @@ if(program.address){
 	addr = program.address;
 	//check if IPv4????
 }else{
-	var interfaces = os.networkInterfaces();
-	var interfaceNames = Object.keys(interfaces);
-	var addresses = [];
+	let interfaces = os.networkInterfaces();
+	let interfaceNames = Object.keys(interfaces);
+	let addresses = [];
 
-	for(var i = 0; i < interfaceNames.length; i++){
-		var interface = interfaces[interfaceNames[i]];
-		for(var j = 0; j < interface.length; j++){
+	for(let i = 0; i < interfaceNames.length; i++){
+		let interface = interfaces[interfaceNames[i]];
+		for(let j = 0; j < interface.length; j++){
 			if(interface[j].family == 'IPv4' && interface[j].address != '127.0.0.1'){
 				addresses.push(interface[j].address);
 			}
@@ -117,13 +117,13 @@ if(program.address){
 }
 
 //audio device
-var audioDevice = rtAudio.getDefaultInputDevice();
+let audioDevice = rtAudio.getDefaultInputDevice();
 let audioChannels;
 if(program.device){
 	audioDevice = parseInt(program.device);
 }
 
-var selectedDevice = audioDevices[audioDevice];
+let selectedDevice = audioDevices[audioDevice];
 
 if(selectedDevice && selectedDevice.inputChannels > 0){
 	logger('Selected device', selectedDevice.name, 'with ' + selectedDevice.inputChannels + ' input channels');
@@ -133,12 +133,12 @@ if(selectedDevice && selectedDevice.inputChannels > 0){
 	process.exit();
 }
 
-if(program.channels && program.channels <= audioChannels){
+if(program.channels && parseInt(program.channels) != NaN && parseInt(program.channels) <= audioChannels){
 	audioChannels = parseInt(program.channels);
 }
 
 //mcast addr
-var aes67Multicast = '239.69.'+addr.split('.').splice(2).join('.');
+let aes67Multicast = '239.69.'+addr.split('.').splice(2).join('.');
 if(program.mcast){
 	aes67Multicast = program.mcast;
 }
@@ -155,18 +155,18 @@ const sessVersion = sessID;
 let ptpMaster;
 
 //rtp vars
-var seqNum = 0;
-var timestampCalc = 0;
-var ssrc = sessID % 0x100000000;
+let seqNum = 0;
+let timestampCalc = 0;
+let ssrc = sessID % 0x100000000;
 
 //timestamp offset stuff
-var offsetSum = 0;
-var count = 0;
-var correct = true;
+let offsetSum = 0;
+let count = 0;
+let correctTimestamp = true;
 
 //open audio stream
+logger('Opening audio stream.');
 rtAudio.openStream(null, {deviceId: audioDevice, nChannels: audioChannels, firstChannel: 0}, RtAudioFormat.RTAUDIO_SINT16, samplerate, fpp, streamName, pcm => rtpSend(pcm));
-
 logger('Trying to sync to PTP master.');
 
 //ptp sync timeout
@@ -183,34 +183,35 @@ ptpv2.init(addr, 0, function(){
 	logger('Synced to', ptpMaster, 'successfully');
 
 	//start audio and sdp
+	logger('Starting SAP annoucements and audio stream.');
 	rtAudio.start();
 	sdp.start(addr, aes67Multicast, samplerate, audioChannels, encoding, streamName, sessID, sessVersion, ptpMaster);
 });
 
 //RTP implementation
-var rtpSend = function(pcm){
+let rtpSend = function(pcm){
 	//convert L16 to L24
-	var samples = pcm.length / 2;
-	var l24 = Buffer.alloc(samples * 3);
+	let samples = pcm.length / 2;
+	let l24 = Buffer.alloc(samples * 3);
 	
-	for(var i = 0; i < samples; i++){
+	for(let i = 0; i < samples; i++){
 		l24.writeUInt16BE(pcm.readUInt16LE(i * 2), i * 3);
 	}
 	
 	//create RTP header and RTP buffer with header and pcm data
-	var rtpHeader = Buffer.alloc(12);
+	let rtpHeader = Buffer.alloc(12);
 	rtpHeader.writeUInt16BE((1 << 15) + 96, 0);// set version byte and add rtp payload type
 	rtpHeader.writeUInt16BE(seqNum, 2);
 	rtpHeader.writeUInt32BE(ssrc, 8);
 	
-	var rtpBuffer = Buffer.concat([rtpHeader, l24]);
+	let rtpBuffer = Buffer.concat([rtpHeader, l24]);
 
 	// timestamp correction stuff
-	if(correct){
-		correct = false;
+	if(correctTimestamp){
+		correctTimestamp = false;
 
-		var ptpTime = ptpv2.ptp_time();
-		var timestampRTP = ((ptpTime[0] * samplerate) + Math.round((ptpTime[1] * samplerate) / 1000000000)) % 0x100000000;
+		let ptpTime = ptpv2.ptp_time();
+		let timestampRTP = ((ptpTime[0] * samplerate) + Math.round((ptpTime[1] * samplerate) / 1000000000)) % 0x100000000;
 		timestampCalc = Math.floor(timestampRTP / fpp)*fpp;
 	}
 	
@@ -218,26 +219,27 @@ var rtpSend = function(pcm){
 	rtpBuffer.writeUInt32BE(timestampCalc, 4);
 	
 	//send RTP packet
-	client.send(rtpBuffer, 5004, aes67Multicast);
-
-	//increase seqnum
-	seqNum = (seqNum + 1) % 0x10000;
+	client.send(rtpBuffer, 5004, aes67Multicast);	
 
 	//timestamp average stuff
-	var ptpTime = ptpv2.ptp_time();
-	var timestampRTP = ((ptpTime[0] * samplerate) + Math.round((ptpTime[1] * samplerate) / 1000000000)) % 0x100000000;
+	let ptpTime = ptpv2.ptp_time();
+	let timestampRTP = ((ptpTime[0] * samplerate) + Math.round((ptpTime[1] * samplerate) / 1000000000)) % 0x100000000;
 	offsetSum += Math.abs(timestampRTP - timestampCalc);
 	count++;
 
-	//increase timestamp
+	//increase timestamp and seqnum
+	seqNum = (seqNum + 1) % 0x10000;
 	timestampCalc = (timestampCalc + fpp) % 0x100000000;
 }
 
+//Interval for timestamp correction calculation
 setInterval(function(){
-	var avg = Math.round(offsetSum / count);
+	let avg = Math.round(offsetSum / count);
 
 	if(avg > fpp){
-		correct = true;
+		correctTimestamp = true;
+		let offsetMS = Math.round(avg / fpp * 1000) / 1000;
+		logger('Resycing PTP and RTP timestamp. Offset was '+offsetMS+'ms.');
 	}
 
 	offsetSum = 0;
