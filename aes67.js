@@ -3,7 +3,7 @@
 const os = require('os');
 const ptpv2 = require('ptpv2');
 const dgram = require('dgram');
-const sdp = require('./sdp');
+const sdp = require('./lib/sdp');
 const { Command } = require('commander');
 const { RtAudio, RtAudioFormat, RtAudioApi } = require('audify');
 
