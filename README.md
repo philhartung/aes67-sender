@@ -29,7 +29,7 @@ Options:
 The software has to be executed with priviliges, because the PTP client binds to ports below 1024.
 ## Use cases
 ### Raspberry Pi 4 with Focusrite Scarlett 2i2
-The setup is a Rasperry Pi 4 (running Ubuntu 20.04) running aes67-sender with a Focusrite Scarlett 2i2 USB audio interface. First list the audio devices:
+The setup is a Rasperry Pi 4 (running Ubuntu 20.04) running *aes67-sender* with a Focusrite Scarlett 2i2 USB audio interface. First list the audio devices:
 ```
 pi@raspberrypi:~/aes67-sender $ node aes67 -a alsa --devices
 Selected ALSA as audio api
@@ -37,3 +37,7 @@ Index, Name, # of Channels
 1 'hw:Scarlett 2i2 USB,0' 2
 ```
 We see the Focusrite interface is index #1, so we can execute the following command to start *aes67-sender*: `sudo node aes67 -a alsa -d 1 -n "Focusrite Scarlett 2i2"`. The device should now show up as "Focusrite Scarlett 2i2" in Dante Controller or similar software. The two inputs of the Focusrite Scarlett 2i2 are now available in the AES67 network.
+
+### Latency cosiderations
+In practice low latency is important. Especially when working in a hybrid Dante/AES67 network, latency should be < 2ms. Dante devices are fixed to a maximum of 2ms latency and drop packets with higher latency. With a Raspberry Pi, latency jitter is quite high. There are quite a lot of packets that are dropped because latency is too high when sending audio to a Dante receiver. With a i7-2600 test system, latency (jitter) was low enough for Dante devices. Here is a screenshot of the latency distribution over 20 minutes from *aes67-sender* running on a i7-2600 test system to a Dante receiver:
+![Screenshot](doc/dante-latency.png "dante-latency")
