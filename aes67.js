@@ -24,6 +24,11 @@ program.option('--address <address>', 'IPv4 address of network interface');
 
 program.parse(process.argv);
 
+let logger = function(){};
+if(program.verbose){
+	logger = console.log;
+}
+
 //rtAudio api stuff
 let rtAudio;
 if(program.api){
@@ -59,7 +64,7 @@ if(program.api){
 	rtAudio = new RtAudio();
 }
 
-console.log('Selected',rtAudio.getApi(),'as audio api');
+logger('Selected',rtAudio.getApi(),'as audio api');
 
 //list audio devices
 var audioDevices = rtAudio.getDevices();
@@ -108,7 +113,7 @@ if(program.address){
 	}
 
 	addr = addresses[0];
-	console.log('Selected',addr ,'as network interface');
+	logger('Selected',addr ,'as network interface');
 }
 
 //audio device
@@ -121,7 +126,7 @@ if(program.device){
 var selectedDevice = audioDevices[audioDevice];
 
 if(selectedDevice && selectedDevice.inputChannels > 0){
-	console.log('Selected device', selectedDevice.name, 'with ' + selectedDevice.inputChannels + ' input channels');
+	logger('Selected device', selectedDevice.name, 'with ' + selectedDevice.inputChannels + ' input channels');
 	audioChannels = Math.min(8, selectedDevice.inputChannels);
 }else{
 	console.error('Invalid audio device!');
@@ -137,6 +142,8 @@ var aes67Multicast = '239.69.'+addr.split('.').splice(2).join('.');
 if(program.mcast){
 	aes67Multicast = program.mcast;
 }
+
+logger('Selected '+aes67Multicast+' as RTP multicast address.');
 
 //AES67 params (hardcoded)
 const samplerate = 48000;
@@ -160,10 +167,20 @@ var correct = true;
 //open audio stream
 rtAudio.openStream(null, {deviceId: audioDevice, nChannels: audioChannels, firstChannel: 0}, RtAudioFormat.RTAUDIO_SINT16, samplerate, fpp, streamName, pcm => rtpSend(pcm));
 
+logger('Trying to sync to PTP master.');
+
+//ptp sync timeout
+setTimeout(function(){
+	if(!ptpMaster){
+		console.error('Could not sync to PTP master. Aborting.');
+		process.exit();
+	}
+}, 10000);
+
 //init PTP client
 ptpv2.init(addr, 0, function(){
 	ptpMaster = ptpv2.ptp_master();
-	console.log('synced to', ptpMaster, 'successfully');
+	logger('Synced to', ptpMaster, 'successfully');
 
 	//start audio and sdp
 	rtAudio.start();
@@ -209,8 +226,7 @@ var rtpSend = function(pcm){
 	//timestamp average stuff
 	var ptpTime = ptpv2.ptp_time();
 	var timestampRTP = ((ptpTime[0] * samplerate) + Math.round((ptpTime[1] * samplerate) / 1000000000)) % 0x100000000;
-	var diff = Math.abs(timestampRTP - timestampCalc);
-	offsetSum += diff;
+	offsetSum += Math.abs(timestampRTP - timestampCalc);
 	count++;
 
 	//increase timestamp

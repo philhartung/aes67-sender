@@ -1,6 +1,8 @@
 var dgram = require('dgram');
 var socket = dgram.createSocket({ type: 'udp4', reuseAddr: true });
 
+let hash = Math.floor(Math.random() * 65536);
+
 var constructSDPMsg = function(addr, multicastAddr, samplerate, channels, encoding, name, sessID, sessVersion, ptpMaster){
 	var sapHeader = Buffer.alloc(8);
 	var sapContentType = Buffer.from('application/sdp\0');
@@ -10,7 +12,7 @@ var constructSDPMsg = function(addr, multicastAddr, samplerate, channels, encodi
 	sapHeader.writeUInt8(0x20);
 
 	//write hash
-	sapHeader.writeUInt16LE(0xefef, 2);
+	sapHeader.writeUInt16LE(hash, 2);
 
 	//write ip
 	sapHeader.writeUInt8(parseInt(ip[0]), 4);
