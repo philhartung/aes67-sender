@@ -145,6 +145,9 @@ if(program.mcast){
 
 logger('Selected '+aes67Multicast+' as RTP multicast address.');
 
+// Add interface to multicast membership (otherwise the OS randomly selects an interface for the multicast traffic)
+client.addMembership(aes67Multicast, addr);
+
 //AES67 params (hardcoded)
 const samplerate = 48000;
 const ptime = 1;
